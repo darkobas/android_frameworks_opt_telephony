@@ -3563,6 +3563,27 @@ public class GsmCdmaPhone extends Phone {
         return mWakeLock;
     }
 
+    private static IExtTelephony getIExtTelephony() {
+        try {
+            IExtTelephony ex = IExtTelephony.Stub.asInterface(ServiceManager.getService("extphone"));
+            return ex;
+        } catch (NoClassDefFoundError ex) {
+            return null;
+        }
+    }
+
+    private boolean isEmergencyNumber(String address) {
+        IExtTelephony mIExtTelephony = getIExtTelephony();
+        if (mIExtTelephony == null) {
+            return PhoneNumberUtils.isEmergencyNumber(address);
+        }
+        try {
+            return mIExtTelephony.isEmergencyNumber(address);
+        } catch (RemoteException ex) {
+            return PhoneNumberUtils.isEmergencyNumber(address);
+        }
+    }
+
     @Override
     public int getLteOnCdmaMode() {
         int currentConfig = super.getLteOnCdmaMode();
@@ -3580,19 +3601,5 @@ public class GsmCdmaPhone extends Phone {
             }
         }
         return currentConfig;
-    }
-
-    private boolean isEmergencyNumber(String address) {
-        IExtTelephony mIExtTelephony =
-            IExtTelephony.Stub.asInterface(ServiceManager.getService("extphone"));
-        boolean result = false;
-        try {
-            result = mIExtTelephony.isEmergencyNumber(address);
-        } catch (RemoteException ex) {
-            loge("RemoteException" + ex);
-        } catch (NullPointerException ex) {
-            loge("NullPointerException" + ex);
-        }
-        return result;
     }
 }
